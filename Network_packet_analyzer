@@ -1,27 +1,36 @@
-from scapy.all import *
+# packet sniffer tool by   - Shaik Abbu Bakar Siddik  
+from scapy.all import sniff, IP, TCP, UDP, ICMP, Raw
 
-def packet_analysis(packet):
-    # Check if packet is IPv4
-    if packet.haslayer(IP):
-        # Get source and destination IP addresses
-        source_ip = packet[IP].src
-        destination_ip = packet[IP].dst
-
-        # Get protocol
+def packet_callback(packet):
+    # Check if the packet has an IP layer
+    if IP in packet:
+        ip_src = packet[IP].src
+        ip_dst = packet[IP].dst
         protocol = packet[IP].proto
 
-        # Check if Raw layer exists
-        if packet.haslayer(Raw):
-            payload = packet[Raw].load
+        # Determine the protocol used in the packet
+        if protocol == 6:
+            protocol_name = "TCP"
+        elif protocol == 17:
+            protocol_name = "UDP"
+        elif protocol == 1:
+            protocol_name = "ICMP"
         else:
-            payload = ""  # Set payload to an empty string if not present
+            protocol_name = "OTHER"
 
-        # Print packet information
-        print(f"Source IP: {source_ip}")
-        print(f"Destination IP: {destination_ip}")
-        print(f"Protocol: {protocol}")
-        print(f"Payload: {payload}")
-        print("--------------------------------")
+        # Display basic information about the packet
+        print(f"[{protocol_name}] Source: {ip_src} -> Destination: {ip_dst}")
 
-# Start sniffing
-sniff(filter="ip", prn=packet_analysis)
+        # Display payload data if available
+        if Raw in packet:
+            payload_data = packet[Raw].load
+            print(f"Payload: {payload_data}\n")
+        else:
+            print("No Payload\n")
+
+def start_sniffing():
+    print("Starting packet sniffing...")
+    sniff(prn=packet_callback, store=0)
+
+if __name__ == "__main__":
+    start_sniffing()
